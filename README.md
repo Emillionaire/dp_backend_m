@@ -79,9 +79,8 @@ server {
                 rewrite ^.+?(/assets/.*) $1 break;
 }
 
-        location /backend/ {
+        location /api/v1/ {
                 include proxy_params;
-                rewrite ^/backend(.*) $1 break;
                 proxy_pass http://unix:/home/<username>/dp_backend_m/dp_backend_m/dp_backend_m/project.sock;
         }
 }
