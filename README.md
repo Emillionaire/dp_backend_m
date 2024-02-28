@@ -114,4 +114,4 @@ WantedBy=multi-user.target
   - sudo systemctl daemon-reload
   - sudo systemctl restart gunicorn
 
-- Frontend: 
+- Next install frontend: https://github.com/Emillionaire/dp_frontend_m
