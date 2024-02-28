@@ -1,3 +1,4 @@
+# Project installation guide
 - Create new OS user:
   - ssh root@<server_ip>
   - adduser <username>
