@@ -1,4 +1,4 @@
-# Project installation guide
+# Project installation guide (backend)
 - Create new OS user:
   - ssh root@<server_ip>
   - adduser <username>
