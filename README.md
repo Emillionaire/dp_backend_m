@@ -31,18 +31,18 @@
   - cd dp_backend_m/dp_backend_m/
   - sudo nano .env
 
-- .env file:
+- .env file, with some parameters for example:
 ```
-SECRET_KEY=
-DEBUG=
-ALLOWED_HOSTS=
-ENGINE=
-NAME=
-HOST=
-PORT=
-USER=
-PASSWORD=
-CORS_ALLOWED_ORIGINS=
+SECRET_KEY=<secret_key>
+DEBUG=<1 or 0>
+ALLOWED_HOSTS=<server_ip>,127.0.0.1,localhost,0.0.0.0>
+ENGINE=<django.db.backends.postgresql>
+NAME=<database_name>
+HOST=<localhost>
+PORT=<5432>
+USER=<username>
+PASSWORD=<password>
+CORS_ALLOWED_ORIGINS=<http://<server_ip>,https://<server_ip>>
 ```
 
 - Create virtual environment:
