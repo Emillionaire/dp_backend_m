@@ -1,4 +1,5 @@
 import os.path
+import re
 
 from cloud.models import User, File
 from cloud.permissions import IsStaffPermission, IsStaffOrOwnPermission, IsStaffOrOwnerPermission
@@ -37,11 +38,18 @@ class UsersView(generics.ListAPIView, generics.CreateAPIView):
             return super().get_permissions()
 
     def password_validator(self, request):
-        try:
-            validate_password(request.data.get('password'))
+        valid_password = re.search(r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{5,}$', request.data.get('password'))
+
+        if valid_password:
             return None
-        except ValidationError as errors:
-            return Response({'password': list(errors)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'password': 'no'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # try:
+        #     validate_password(request.data.get('password'))
+        #     return None
+        # except ValidationError as errors:
+        #     return Response({'password': list(errors)}, status=status.HTTP_400_BAD_REQUEST)
 
     def perform_create(self, serializer, **kwargs):
         serializer.save(**kwargs)
@@ -94,7 +102,8 @@ class FileCreateView(generics.ListAPIView, generics.CreateAPIView, generics.Retr
     permission_classes = [IsAuthenticated, IsStaffOrOwnerPermission]
 
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset() if request.user.is_superuser else File.objects.filter(owner=request.user.id))
+        queryset = self.filter_queryset(
+            self.get_queryset() if request.user.is_superuser else File.objects.filter(owner=request.user.id))
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -107,7 +116,8 @@ class FileCreateView(generics.ListAPIView, generics.CreateAPIView, generics.Retr
         print(request.data)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.validated_data['file_entity'].name = translit(serializer.validated_data['file_entity'].name, language_code='ru', reversed=True)
+        serializer.validated_data['file_entity'].name = translit(serializer.validated_data['file_entity'].name,
+                                                                 language_code='ru', reversed=True)
         serializer.validated_data['name'] = serializer.validated_data['file_entity'].name
         serializer.validated_data['size'] = serializer.validated_data['file_entity'].size
         serializer.validated_data['owner'] = request.user
