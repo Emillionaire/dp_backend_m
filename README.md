@@ -85,7 +85,6 @@ server {
         }
 }
 ```
-
   - sudo ln -s /etc/nginx/sites-available/project /etc/nginx/sites-enabled/
   - sudo systemctl restart nginx
 
