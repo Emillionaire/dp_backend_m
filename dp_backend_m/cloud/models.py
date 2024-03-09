@@ -1,4 +1,5 @@
 import os.path
+import uuid
 
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinLengthValidator
@@ -29,4 +30,5 @@ class File(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_download = models.DateTimeField(blank=True, null=True)
     free_file = models.BooleanField(blank=True, default=False)
+    url = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 

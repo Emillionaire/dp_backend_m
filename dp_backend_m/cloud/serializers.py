@@ -24,7 +24,7 @@ class FileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ['id', 'file_entity', 'owner', 'name', 'description', 'size', 'created_at', 'last_download', 'free_file']
+        fields = ['id', 'file_entity', 'owner', 'name', 'description', 'size', 'created_at', 'last_download', 'free_file', 'url']
 
 
 class FileUpdateSerializer(serializers.ModelSerializer):

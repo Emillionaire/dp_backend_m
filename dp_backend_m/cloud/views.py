@@ -15,6 +15,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from transliterate import translit
+import shutil
 
 
 class UsersView(generics.ListAPIView, generics.CreateAPIView):
@@ -45,12 +46,6 @@ class UsersView(generics.ListAPIView, generics.CreateAPIView):
         else:
             return Response({'password': 'no'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # try:
-        #     validate_password(request.data.get('password'))
-        #     return None
-        # except ValidationError as errors:
-        #     return Response({'password': list(errors)}, status=status.HTTP_400_BAD_REQUEST)
-
     def perform_create(self, serializer, **kwargs):
         serializer.save(**kwargs)
 
@@ -59,7 +54,6 @@ class UsersView(generics.ListAPIView, generics.CreateAPIView):
         if response:
             return response
         else:
-            # full_name = request.username
             password = make_password(request.data.get('password'))
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -81,7 +75,15 @@ class UserView(generics.RetrieveAPIView):
 
 
 class UserUpdateView(generics.UpdateAPIView):
-    pass
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsStaffOrOwnPermission]
+
+    def get_serializer_class(self):
+        if self.request.user.is_staff:
+            return AdminSerializer
+        else:
+            return UserSerializer
 
 
 class UserDeleteView(generics.DestroyAPIView):
@@ -90,6 +92,7 @@ class UserDeleteView(generics.DestroyAPIView):
     permission_classes = [IsStaffOrOwnPermission]
 
     def destroy(self, request, *args, **kwargs):
+        shutil.rmtree(os.path.join(settings.MEDIA_ROOT, self.get_object().username))
         instance = self.get_object()
         instance.is_active = False
         instance.save()
@@ -103,7 +106,7 @@ class FileCreateView(generics.ListAPIView, generics.CreateAPIView, generics.Retr
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(
-            self.get_queryset() if request.user.is_superuser else File.objects.filter(owner=request.user.id))
+            self.get_queryset() if request.user.is_staff else File.objects.filter(owner=request.user.id))
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -113,7 +116,6 @@ class FileCreateView(generics.ListAPIView, generics.CreateAPIView, generics.Retr
             return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
-        print(request.data)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.validated_data['file_entity'].name = translit(serializer.validated_data['file_entity'].name,
@@ -126,19 +128,6 @@ class FileCreateView(generics.ListAPIView, generics.CreateAPIView, generics.Retr
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    # def get(self, request, *args, **kwargs):
-    #     file_entity = self.get_object()
-    #     file_path = os.path.join(settings.MEDIA_ROOT, file_entity.file_entity.name)
-    #     print(file_path)
-    #     if os.path.exists(file_path):
-    #         file_entity.last_download = timezone.now()
-    #         file_entity.save()
-    #         with open(file_path, 'rb') as file:
-    #             response = HttpResponse(file.read())
-    #             return response
-    #     else:
-    #         return Response({'detail': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
-
 
 class FileUpdateView(generics.UpdateAPIView):
     queryset = File.objects.all()
@@ -149,26 +138,28 @@ class FileUpdateView(generics.UpdateAPIView):
 class FreefileView(generics.RetrieveAPIView):
     queryset = File.objects.all()
     serializer_class = FreefileSerializer
+    
+    def get_object(self):
+        if self.kwargs.get('url') is not None:
+            return File.objects.get(url=self.kwargs.get('url'))
+        return super().get_object()
 
     def get(self, request, *args, **kwargs):
         file_entity = self.get_object()
-        print(file_entity)
-        print(file_entity.file_entity)
-        print(file_entity.file_entity.name)
         file_path = os.path.join(settings.MEDIA_ROOT, file_entity.file_entity.name)
-        print(file_path)
-        if file_entity.free_file:
-            if os.path.exists(file_path):
-                file_entity.last_download = timezone.now()
-                file_entity.save()
-                with open(file_path, 'rb') as file:
-                    response = HttpResponse(file.read())
-                    response["Content-Disposition"] = f"{'attachment'}; filename={file_entity.name}"
-                    return response
-            else:
-                return Response({'detail': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
-        else:
+        
+        if not file_entity.free_file and not self.request.path.startswith("/api/v1/files/freefile"):
             return Response({'detail': 'nope'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if os.path.exists(file_path):
+            file_entity.last_download = timezone.now()
+            file_entity.save()
+            with open(file_path, 'rb') as file:
+                response = HttpResponse(file.read())
+                response["Content-Disposition"] = f"{'attachment'}; filename={file_entity.name}"
+                return response
+        else:
+            return Response({'detail': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class FileDeleteView(generics.DestroyAPIView):

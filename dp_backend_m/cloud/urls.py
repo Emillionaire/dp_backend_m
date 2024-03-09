@@ -12,11 +12,8 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view()),
     path('token/verify/', TokenVerifyView.as_view()),
     path('files/', FileCreateView.as_view()),
-    # path('files/<int:pk>/', FileCreateView.as_view()),
     path('files/freefile/<int:pk>/', FreefileView.as_view()),
     path('files/update/<int:pk>/', FileUpdateView.as_view()),
     path('files/delete/<int:pk>/', FileDeleteView.as_view()),
-    path('download/<int:pk>/', FreefileView.as_view()),
-    # path('freefile/', FreeFileCreateView.as_view()),
-    # path('freefile/<int:pk>/', FreeFileCreateView.as_view()),
+    path('download/<str:url>/', FreefileView.as_view()),
 ]
